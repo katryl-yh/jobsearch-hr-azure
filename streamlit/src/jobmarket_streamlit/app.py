@@ -1,5 +1,5 @@
 import streamlit as st
-from connect_data_warehouse import get_db_connection
+from .connect_data_warehouse import get_db_connection
 
 MART_FOR_OCCUPATION_FIELDS = "mart_occupation_demand"
 _OPTION_LABEL_ALL = "All"  # for use with widgets
