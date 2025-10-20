@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 
 import dlt
-from dagster.src.jobmarket_pipelines.defs.dlt.jobsearch.jobsearch_source import jobsearch_source
+from .jobsearch_source import jobsearch_source
 
 _SCHEMA = "staging"
 
