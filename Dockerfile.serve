@@ -1,0 +1,42 @@
+FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim AS builder
+
+WORKDIR /app
+
+ENV UV_COMPILE_BYTECODE=1 \
+    UV_LINK_MODE=copy
+
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=uv.lock,target=uv.lock \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    uv sync --frozen --no-install-workspace --no-dev
+
+COPY pyproject.toml uv.lock /app/
+COPY streamlit /app/streamlit
+
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --package jobmarket_streamlit --no-dev
+
+FROM python:3.12-slim-bookworm AS runtime
+
+RUN groupadd --system --gid 999 streamlit \
+    && useradd --system --gid 999 --uid 999 --create-home streamlit
+
+WORKDIR /app
+
+COPY --from=builder --chown=streamlit:streamlit /app/.venv /app/.venv
+COPY --from=builder --chown=streamlit:streamlit /app/streamlit /app/streamlit
+
+ENV PATH="/app/.venv/bin:$PATH" \
+    PYTHONUNBUFFERED=1 \
+    DATA_DIR=/data
+
+RUN mkdir -p /data \
+    && chown -R streamlit:streamlit /data
+
+USER streamlit
+EXPOSE 8501
+
+CMD ["streamlit", "run", \
+     "streamlit/src/jobmarket_streamlit/app.py", \
+     "--server.port=8501", \
+     "--server.address=0.0.0.0"]

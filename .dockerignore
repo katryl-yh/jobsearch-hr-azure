@@ -1,0 +1,113 @@
+# Git and Version Control
+.git
+.gitignore
+*.md
+README.md
+
+# Secrets and Configs (Critical for Docker)
+.env
+.env.*
+profiles.yml
+credentials.*
+secrets.*
+*_key*
+api_keys.*
+
+# OS and Editor Files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+*~
+.DS_Store?
+._*
+Icon?
+.vscode/
+.idea/
+*.swp
+*.swo
+.spyderproject
+
+# Python Caches and Builds (Not needed in container)
+__pycache__/
+*.py[cod]
+*.pyc
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+*.egg
+.pytest_cache/
+.coverage
+.coverage.*
+.mypy_cache/
+.pytype/
+.ruff_cache/
+.cache/
+
+# Virtual Environments (Docker creates its own)
+.venv/
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Package Manager Files (Docker handles dependencies)
+.pdm-python
+.pdm-build/
+.pixi
+__pypackages__/
+.python-version
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Development Tools
+.tox/
+.nox/
+.hypothesis/
+htmlcov/
+cover/
+nosetests.xml
+coverage.xml
+*.cover
+
+# Logs and Temp Files
+*.log
+logs/
+tmp/
+.development/
+.local/
+
+# Runtime/State Files (Generated at runtime)
+.tmp_dagster*
+instance/
+dagster.db
+dagster.yaml.bak
+.dlt/
+.dlt/logs/
+pipeline_state.json
+dlt_state/
+target/
+dbt_packages/
+dbt_modules/
+run_results.json
+package-lock.*
+.user.yml
+
+# Database Files (Should use external DB in production)
+*.duckdb
+*.duckdb-journal
+*.duckdb-wal
+*.duckdb-shm
+*.db
+*.db-journal
+
+# Large/Transient Data (Mount as volumes instead)
+data/
+
+# Docker-specific excludes
+Dockerfile*
+docker-compose*.yml
+.dockerignore
