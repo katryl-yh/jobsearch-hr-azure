@@ -1,78 +1,108 @@
+# Secrets and Configs
+.env
+.env.*
+profiles.yml
+credentials.*
+secrets.*
+*_key*
+api_keys.*
 
-# Python
+# OS and Editor Files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+*~
+.DS_Store?
+._*
+Icon?
+.vscode/
+.idea/
+*.swp
+*.swo
+.spyderproject
+
+# Python Caches and Builds
 __pycache__/
+*.py[cod]
 *.pyc
-*.pyd
-*.pyo
+*$py.class
 *.so
-
-# Distribution / packaging
-.Python/
+.Python
 build/
-develop-eggs/
 dist/
-eggs/
 *.egg-info/
-.installed.cfg
-*.manifest
-*.spec
+*.egg
+.pytest_cache/
+.coverage
+.coverage.*
+.mypy_cache/
+.pytype/
+.ruff_cache/
+.cache/
 
-# Installer logs
+# Virtual Environments
+.venv/
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Package Managers (uv/Pip)
+uv.lock
+.pdm-python
+.pdm-build/
+.pixi
+__pypackages__/
+.python-version
 pip-log.txt
 pip-delete-this-directory.txt
 
-# Unit test / coverage reports
-.coverage
+# Development Tools
 .tox/
 .nox/
-.pytest_cache/
+.hypothesis/
 htmlcov/
+cover/
+nosetests.xml
+coverage.xml
+*.cover
 
-# Type checking
-.mypy_cache/
-.pyre/
-.pytype/
-typings/
+# Logs and Temp Files
+*.log
+logs/
+tmp/
+.development/
+.local/
 
-# Virtual environment
-env/
-venv/
-.venv/
-.venv/
-.uv/
-.cache/
-pip-cache/
-uv.lock
+# Dagster
+.tmp_dagster*
+instance/
+dagster.db
+dagster.yaml.bak
 
-# Editor directories and files
-.idea/
-.vscode/
-*.code-workspace
-*.sublime-project
-*.sublime-workspace
-.DS_Store
-.localized
-Thumbs.db
-Desktop.ini
+# dlt
+.dlt/
+.dlt/logs/
+pipeline_state.json
+dlt_state/
 
-# Jupyter Notebook
-.ipynb_checkpoints
+# dbt
+target/
+dbt_packages/
+dbt_modules/
+run_results.json
+logs/  # dbt-specific logs
+package-lock.*
+.user.yml
 
-# Environment variables and secrets
-.env
-.flaskenv
-.settings.ini
-config.ini
-settings.py
-local_settings.py
-*.key
-*.pem
-*.pfx
-*.jks
-*.kdb
-*.csr
-*.crt
-*.cert
-*.secrets
-secrets.json
+# DuckDB (Local DB Files)
+*.duckdb
+*.duckdb-journal
+*.duckdb-wal
+*.duckdb-shm
+*.db
+*.db-journal
 
+# Project-Specific (Large/Transient Data)
+data/
