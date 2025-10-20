@@ -4,7 +4,7 @@ import branca.colormap as colormap
 import folium
 import geopandas
 import streamlit as st
-from connect_data_warehouse import get_db_connection
+from ..connect_data_warehouse import get_db_connection
 from streamlit_folium import st_folium
 
 # -- constants

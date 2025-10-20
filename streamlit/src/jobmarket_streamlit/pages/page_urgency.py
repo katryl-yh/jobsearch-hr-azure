@@ -1,5 +1,5 @@
 import streamlit as st
-from connect_data_warehouse import get_job_listings
+from ..connect_data_warehouse import get_job_listings
 import altair as alt
 
 
