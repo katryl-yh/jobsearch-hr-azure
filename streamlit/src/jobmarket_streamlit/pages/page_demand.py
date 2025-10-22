@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-from ..connect_data_warehouse import get_job_listings
+from jobmarket_streamlit.connect_data_warehouse import get_job_listings
 
 # Set the title and a short description for this page in the Streamlit app
 st.title("📈 Demand overview")
