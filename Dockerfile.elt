@@ -1,16 +1,17 @@
 FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim AS builder
 
-WORKDIR /app
-
 ENV UV_COMPILE_BYTECODE=1 \
-    UV_LINK_MODE=copy
+    UV_LINK_MODE=copy \
+    UV_PYTHON_DOWNLOADS=0
+
+WORKDIR /app
 
 RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=uv.lock,target=uv.lock \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
     uv sync --frozen --no-install-workspace --no-dev
 
-COPY pyproject.toml uv.lock /app/
+COPY pyproject.toml uv.lock /app
 COPY dagster /app/dagster
 COPY dbt /app/dbt
 
@@ -19,27 +20,23 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 
 FROM python:3.12-slim-bookworm AS runtime
 
-RUN groupadd --system --gid 999 dagster \
-    && useradd --system --gid 999 --uid 999 --create-home dagster
+COPY --from=builder /app/.venv /app/.venv
+COPY --from=builder /app/dagster /app/dagster
+COPY --from=builder /app/dbt /app/dbt
+
+ENV PATH="/app/.venv/bin:$PATH" \
+    PYTHONPATH="/app/dagster/src:/app" \
+    PYTHONUNBUFFERED=1
+
+ENV DAGSTER_HOME=/mnt/dagster_home \
+    DBT_PROFILES_DIR=/mnt/.dbt \
+    DBT_PROJECT_DIR=/app/dbt/jobmarket_dbt \
+    DUCKDB_PATH=/mnt/data/warehouse.duckdb
 
 WORKDIR /app
 
-COPY --from=builder --chown=dagster:dagster /app/.venv /app/.venv
-
-COPY --from=builder --chown=dagster:dagster /app/dagster /app/dagster
-COPY --from=builder --chown=dagster:dagster /app/dbt /app/dbt
-
-ENV PATH="/app/.venv/bin:$PATH" \
-    PYTHONUNBUFFERED=1 \
-    DAGSTER_HOME=/home/dagster/dagster_home \
-    DBT_PROJECT_DIR=/app/dbt/jobmarket_dbt \
-    DATA_DIR=/data
-
-RUN mkdir -p /home/dagster/dagster_home \
-             /data \
-    && chown -R dagster:dagster /home/dagster /data
-
-USER dagster
 EXPOSE 3000
 
-CMD ["dagster", "dev", "-h", "0.0.0.0", "-p", "3000"]
+CMD ["dagster", "dev", \
+     "-h", "0.0.0.0", "-p", "3000", \
+     "-m", "jobmarket_pipelines.definitions"]
