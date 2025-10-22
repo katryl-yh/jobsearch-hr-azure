@@ -1,0 +1,19 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "jobmarket-hr-analytics"
+version = "0.1.0"
+description = "Monorepo/Workspace for the jobmarket data platform"
+requires-python = ">=3.12"
+
+[tool.uv.workspace]
+members = [
+    "dagster",
+    "dbt",    
+    "streamlit",
+]
+
+[tool.uv]
+package = false

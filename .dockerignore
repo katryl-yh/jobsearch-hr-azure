@@ -1,4 +1,10 @@
-# Secrets and Configs
+# Git and Version Control
+.git
+.gitignore
+*.md
+README.md
+
+# Secrets and Configs (Critical for Docker)
 .env
 .env.*
 profiles.yml
@@ -21,7 +27,7 @@ Icon?
 *.swo
 .spyderproject
 
-# Python Caches and Builds
+# Python Caches and Builds (Not needed in container)
 __pycache__/
 *.py[cod]
 *.pyc
@@ -40,7 +46,7 @@ dist/
 .ruff_cache/
 .cache/
 
-# Virtual Environments
+# Virtual Environments (Docker creates its own)
 .venv/
 venv/
 env/
@@ -48,8 +54,7 @@ ENV/
 env.bak/
 venv.bak/
 
-# Package Managers (uv/Pip)
-uv.lock
+# Package Manager Files (Docker handles dependencies)
 .pdm-python
 .pdm-build/
 .pixi
@@ -75,28 +80,23 @@ tmp/
 .development/
 .local/
 
-# Dagster
+# Runtime/State Files (Generated at runtime)
 .tmp_dagster*
 instance/
 dagster.db
 dagster.yaml.bak
-
-# dlt
 .dlt/
 .dlt/logs/
 pipeline_state.json
 dlt_state/
-
-# dbt
 target/
 dbt_packages/
 dbt_modules/
 run_results.json
-logs/  # dbt-specific logs
 package-lock.*
 .user.yml
 
-# DuckDB (Local DB Files)
+# Database Files (Should use external DB in production)
 *.duckdb
 *.duckdb-journal
 *.duckdb-wal
@@ -104,5 +104,10 @@ package-lock.*
 *.db
 *.db-journal
 
-# Project-Specific (Large/Transient Data)
+# Large/Transient Data (Mount as volumes instead)
 data/
+
+# Docker-specific excludes
+Dockerfile*
+docker-compose*.yml
+.dockerignore
