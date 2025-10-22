@@ -1,12 +1,6 @@
-"""
-Run with:
-uv run -m jobmarket_pipelines.defs.dlt_sources.jobsearch.jobsearch_rest_source
-"""
-
 from dataclasses import field
 
 import dlt
-import duckdb
 from dlt.sources.config import configspec
 from dlt.sources.helpers.rest_client.paginators import OffsetPaginator
 from dlt.sources.rest_api import RESTAPIConfig, rest_api_resources
@@ -67,25 +61,3 @@ def jobsearch_source(config: JobsearchConfig = dlt.config.value):
     }
 
     yield from rest_api_resources(RESTAPIConfig(**config))
-
-
-def main():
-    config = JobsearchConfig()
-    conn = duckdb.connect("janus.duckdb")
-    p = dlt.pipeline(
-        destination=dlt.destinations.duckdb(conn),
-        dataset_name=config.schema_name,
-        # dev_mode=True,
-    )
-
-    dlt_loadinfo = p.run(jobsearch_source())
-
-    print(dlt_loadinfo)
-
-    print(p.state)
-
-    print(conn.sql("select occupation_field__concept_id, removed, publication_date, timestamp from job_ads;"))
-
-
-if __name__ == "__main__":
-    main()
