@@ -8,8 +8,7 @@ from dlt.sources.rest_api import RESTAPIConfig, rest_api_resources
 
 @configspec
 class JobsearchConfig:
-    table_name: str = "job_ads_data"
-    schema_name: str = "job_ads_schema"
+    table_name: str = "job_ads_raw"
 
     base_url: str = "https://jobsearch.api.jobtechdev.se"
     limit: int = 100

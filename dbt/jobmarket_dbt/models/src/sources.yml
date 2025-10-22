@@ -3,6 +3,6 @@ sources:
     schema: staging
     tables:
       - name: stg_ads
-        identifier: technical_field_job_ads
+        identifier: job_ads_raw
       - name: stg_coords
-        identifier: technical_field_job_ads__workplace_address__coordinates
+        identifier: job_ads_raw__workplace_address__coordinates
