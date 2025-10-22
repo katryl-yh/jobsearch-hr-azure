@@ -1,8 +1,7 @@
-from pathlib import Path
-import duckdb
 import streamlit as st
-from jobmarket_streamlit.connect_data_warehouse import get_db_connection
+from jobmarket_streamlit.connect_data_warehouse import get_cached_ddb_conn
 
+MARTS_SCHEMA = "marts"
 MART_FOR_OCCUPATION_FIELDS = "mart_occupation_demand"
 _OPTION_LABEL_ALL = "All"  # for use with widgets
 
@@ -21,14 +20,12 @@ pages = {
 
 # -- get available occupation fields for widget
 
-# con = get_db_connection([MART_FOR_OCCUPATION_FIELDS])
-db_path = str(Path(__file__).parents[3] / "data/job_ads.duckdb")
-con = duckdb.connect(db_path, read_only=True)
+conn = get_cached_ddb_conn()
 
-rel_occupation_fields = con.sql(
+rel_occupation_fields = conn.sql(
     query=f"""
 SELECT occupation_field
-FROM marts.{MART_FOR_OCCUPATION_FIELDS}
+FROM {MARTS_SCHEMA}.{MART_FOR_OCCUPATION_FIELDS}
 GROUP BY 1
 ORDER BY 1 DESC;
 """
@@ -36,7 +33,6 @@ ORDER BY 1 DESC;
 
 available_occupation_fields = [item for (item,) in rel_occupation_fields.fetchall()]
 
-con.close()
 # -- sidebar selectbox filter
 
 st.sidebar.selectbox(

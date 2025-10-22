@@ -1,47 +1,37 @@
 from pathlib import Path
-import duckdb
 
-import streamlit as st
-from dotenv import load_dotenv
+import duckdb
 from pandas import DataFrame
 
-# data warehouse directory
-db_path = str(Path(__file__).parents[3] / "data/job_ads.duckdb")
+import streamlit as st
 
-def query_job_listings(mart_table: str) -> DataFrame:
-    """Queries a job listings table and returns the data as a pandas DataFrame."""
-    with duckdb.connect(db_path, read_only=True) as conn:
-        query = f"SELECT * FROM {mart_table}"
-
-        print(f"Executing query and fetching data for '{mart_table}'...")
-
-        cursor = conn.cursor()
-        cursor.execute(query)
-        df = cursor.fetch_pandas_all()
-
-        print(f"Successfully fetched {len(df)} rows into a Pandas DataFrame.")
-
-        return df
-
-
-@st.cache_data
-def get_job_listings(mart_table: str) -> DataFrame:
-    return query_job_listings(mart_table)
-
-
-def get_ddb_conn(
-    mart_tables: list[str] | None = None,
-    schema: str | None = None,
-    ddb_table_name_prefix: str | None = None,
-) -> duckdb.DuckDBPyConnection:
-     with duckdb.connect(db_path, read_only=True) as conn:
-        return conn
+DUCKDB_PATH = Path(__file__).parents[3] / "data/job_ads.duckdb"
+STREAMLIT_DEFAULT_SCHEMA = "marts"  # MARTS_SCHEMA
 
 
 @st.cache_resource
-def get_db_connection(
-    mart_tables: list[str],
-    schema: str | None = None,
-    ddb_table_name_prefix: str | None = None,
-) -> duckdb.DuckDBPyConnection:
-    return get_ddb_conn(mart_tables, ddb_table_name_prefix, schema)
+def get_cached_ddb_conn(read_only: bool = True):
+    """Returns a cached Streamlit-resource DuckDBPyConnection."""
+    return duckdb.connect(str(DUCKDB_PATH), read_only=read_only)
+
+
+def get_ddb_df(conn: duckdb.DuckDBPyConnection, table: str, schema: str, uppercase_columns: bool = False) -> DataFrame:
+    """Fetches a table and returns the data as a pandas DataFrame."""
+    print(f"Fetching data from '{schema}.{table}'...")
+
+    df = conn.sql(f"SELECT * FROM {schema}.{table}").to_df()
+
+    if uppercase_columns:
+        df.columns = [str(col).upper() for col in df.columns]
+
+    print(f"Successfully fetched {len(df)} rows into a Pandas DataFrame.")
+    return df
+
+
+@st.cache_data
+def get_cached_ddb_df(table: str, schema: str | None = None, uppercase_columns: bool = False) -> DataFrame:
+    """Fetches a table and returns the data as a cached Streamlit-dataset pandas DataFrame."""
+    if schema is None:
+        schema = STREAMLIT_DEFAULT_SCHEMA
+
+    return get_ddb_df(get_cached_ddb_conn(), table, schema, uppercase_columns)
