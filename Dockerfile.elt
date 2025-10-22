@@ -1,0 +1,45 @@
+FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim AS builder
+
+WORKDIR /app
+
+ENV UV_COMPILE_BYTECODE=1 \
+    UV_LINK_MODE=copy
+
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=uv.lock,target=uv.lock \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    uv sync --frozen --no-install-workspace --no-dev
+
+COPY pyproject.toml uv.lock /app/
+COPY dagster /app/dagster
+COPY dbt /app/dbt
+
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --package jobmarket_pipelines --no-dev
+
+FROM python:3.12-slim-bookworm AS runtime
+
+RUN groupadd --system --gid 999 dagster \
+    && useradd --system --gid 999 --uid 999 --create-home dagster
+
+WORKDIR /app
+
+COPY --from=builder --chown=dagster:dagster /app/.venv /app/.venv
+
+COPY --from=builder --chown=dagster:dagster /app/dagster /app/dagster
+COPY --from=builder --chown=dagster:dagster /app/dbt /app/dbt
+
+ENV PATH="/app/.venv/bin:$PATH" \
+    PYTHONUNBUFFERED=1 \
+    DAGSTER_HOME=/home/dagster/dagster_home \
+    DBT_PROJECT_DIR=/app/dbt/jobmarket_dbt \
+    DATA_DIR=/data
+
+RUN mkdir -p /home/dagster/dagster_home \
+             /data \
+    && chown -R dagster:dagster /home/dagster /data
+
+USER dagster
+EXPOSE 3000
+
+CMD ["dagster", "dev", "-h", "0.0.0.0", "-p", "3000"]
