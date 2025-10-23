@@ -1,6 +1,7 @@
 # ==================== #
 #       imports        #
 # ==================== #
+import os
 import dagster as dg
 from dagster_dlt import DagsterDltResource, dlt_assets
 from dagster_dbt import DbtCliResource, DbtProject, dbt_assets
@@ -11,6 +12,9 @@ import dlt
 # data warehouse directory
 from pathlib import Path
 db_path = str(Path(__file__).parents[3] / "data/job_ads.duckdb")
+
+DBT_PROFILES_DIR = os.getenv("DBT_PROFILES_DIR", Path.home() / ".dbt")
+
 
 # ==================== #
 #       dlt Asset      #
@@ -38,11 +42,10 @@ def dlt_load(context: dg.AssetExecutionContext, dlt: DagsterDltResource):
 # Points to the dbt project path
 dbt_project_directory = Path(__file__).parents[3] / "dbt/jobmarket_dbt"
 # Define the path to your profiles.yml file (in your home directory)
-profiles_dir = Path.home() / ".dbt"  
 
 # instance of DbtProject with all necessary paths
 dbt_project = DbtProject(project_dir=dbt_project_directory,
-                         profiles_dir=profiles_dir)
+                         profiles_dir=DBT_PROFILES_DIR)
 
 # an instance from the dbt resource class to run dbt codes
 dbt_resource = DbtCliResource(project_dir=dbt_project)
