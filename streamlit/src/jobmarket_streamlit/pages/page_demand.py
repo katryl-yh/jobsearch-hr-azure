@@ -1,7 +1,9 @@
-import streamlit as st
 import pandas as pd
 import plotly.express as px
-from ..connect_data_warehouse import get_job_listings
+
+import streamlit as st
+from jobmarket_streamlit.connect_data_warehouse import get_cached_ddb_df
+
 
 # Set the title and a short description for this page in the Streamlit app
 st.title("📈 Demand overview")
@@ -11,9 +13,9 @@ st.write("Analyze occupation demand trends and see which occupations are most in
 selected_occupation_field = st.session_state.occupation_field_filter
 
 # Query the data warehouse to get the data marts
-df_demand = get_job_listings("mart_occupation_demand")
-df_trends = get_job_listings("mart_trends")
-df_requirements = get_job_listings("mart_occupation_requirements")
+df_demand = get_cached_ddb_df("mart_occupation_demand", uppercase_columns=True)
+df_trends = get_cached_ddb_df("mart_trends", uppercase_columns=True)
+df_requirements = get_cached_ddb_df("mart_occupation_requirements", uppercase_columns=True)
 
 # Filter data based on occupation field selection
 if selected_occupation_field != "All":
@@ -44,14 +46,15 @@ formatted_vacancies = f"{total_vacancies:,}".replace(",", " ")
 
 # Create a cleaner KPI display with title on top row and field info on second row
 with kpi_col:
-    st.markdown(f"""
+    st.markdown(
+        f"""
     <div style="display: flex; align-items: center;">
         <div>
             <div style="font-size: 2rem; font-weight: bold; margin-bottom: 0;">
                 Total Active Vacancies
             </div>
             <div style="font-size: 1.5rem; color: #666; margin-top: 0;">
-                for {selected_occupation_field if selected_occupation_field != 'All' else 'All Fields'}
+                for {selected_occupation_field if selected_occupation_field != "All" else "All Fields"}
             </div>
         </div>
         <div style="margin-left: 30px;">
@@ -60,7 +63,9 @@ with kpi_col:
             </span>
         </div>
     </div>
-    """, unsafe_allow_html=True)
+    """,
+        unsafe_allow_html=True,
+    )
 
 # Add vertical spacing between sections
 st.markdown("<div style='margin-top: 2rem;'></div>", unsafe_allow_html=True)
@@ -70,7 +75,8 @@ st.markdown("<div style='margin-top: 2rem;'></div>", unsafe_allow_html=True)
 # ==================================
 
 # Add CSS for better layout of titles and toggles
-st.markdown("""
+st.markdown(
+    """
 <style>
 .section-header {
     display: flex;
@@ -82,7 +88,9 @@ st.markdown("""
     margin-right: 15px;
 }
 </style>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
 
 # Create section header with title
 st.markdown('<div class="section-header"><h3>Top 10 Occupation Groups:</h3></div>', unsafe_allow_html=True)
@@ -97,19 +105,19 @@ fig_top_groups = px.bar(
     x="VACANCY_COUNT",
     color="OCCUPATION_FIELD",
     orientation="h",
-    #title="Top 10 Groups by Demand",
+    # title="Top 10 Groups by Demand",
     labels={"VACANCY_COUNT": "Number of Vacancies"},
-    height=400
+    height=400,
 )
 # Update layout without y-axis label to declutter
 fig_top_groups.update_layout(
     yaxis={
-        'categoryorder': 'total ascending',
-        'title': None  # Remove y-axis title
+        "categoryorder": "total ascending",
+        "title": None,  # Remove y-axis title
     },
-    margin=dict(l=20, r=20, t=40, b=20)  # Adjust margins
+    margin=dict(l=20, r=20, t=40, b=20),  # Adjust margins
 )
-st.plotly_chart(fig_top_groups, width='stretch')
+st.plotly_chart(fig_top_groups, width="stretch")
 
 # Create section header with title for occupations
 st.markdown('<div class="section-header"><h3>Top 10 Occupations:</h3></div>', unsafe_allow_html=True)
@@ -124,19 +132,19 @@ fig_top_occupations = px.bar(
     x="VACANCY_COUNT",
     color="OCCUPATION_GROUP",
     orientation="h",
-    #title="Top 10 Occupations by Demand",
+    # title="Top 10 Occupations by Demand",
     labels={"VACANCY_COUNT": "Number of Vacancies"},
-    height=400
+    height=400,
 )
 # Update layout without y-axis label to declutter
 fig_top_occupations.update_layout(
     yaxis={
-        'categoryorder': 'total ascending',
-        'title': None  # Remove y-axis title
+        "categoryorder": "total ascending",
+        "title": None,  # Remove y-axis title
     },
-    margin=dict(l=20, r=20, t=40, b=20)  # Adjust margins
+    margin=dict(l=20, r=20, t=40, b=20),  # Adjust margins
 )
-st.plotly_chart(fig_top_occupations, width='stretch')
+st.plotly_chart(fig_top_occupations, width="stretch")
 
 # ==================================
 # GROUP SECTION
@@ -152,32 +160,34 @@ selected_group = st.selectbox("Select an occupation group to explore", available
 
 # Create a table showing occupations within the selected group
 occupations_in_group = df_occupation[df_occupation["OCCUPATION_GROUP"] == selected_group]
-occupations_table = occupations_in_group[["OCCUPATION_LABEL", "VACANCY_COUNT"]].sort_values("VACANCY_COUNT", ascending=False)
+occupations_table = occupations_in_group[["OCCUPATION_LABEL", "VACANCY_COUNT"]].sort_values(
+    "VACANCY_COUNT", ascending=False
+)
 
 # Get requirements data for the selected group
 requirements_group = df_requirements_filtered[
-    (df_requirements_filtered["LEVEL"] == "group") & 
-    (df_requirements_filtered["OCCUPATION_GROUP"] == selected_group)
+    (df_requirements_filtered["LEVEL"] == "group") & (df_requirements_filtered["OCCUPATION_GROUP"] == selected_group)
 ]
 
 requirements_occupations = df_requirements_filtered[
-    (df_requirements_filtered["LEVEL"] == "occupation") & 
-    (df_requirements_filtered["OCCUPATION_GROUP"] == selected_group)
+    (df_requirements_filtered["LEVEL"] == "occupation")
+    & (df_requirements_filtered["OCCUPATION_GROUP"] == selected_group)
 ]
 
 # Merge demand and requirements data for occupations
 if not requirements_occupations.empty:
     merged_data = pd.merge(
         occupations_table,
-        requirements_occupations[["OCCUPATION_LABEL", "EXPERIENCE_REQUIRED_PERCENTAGE", 
-                                "DRIVER_LICENSE_PERCENTAGE", "OWN_CAR_PERCENTAGE"]],
+        requirements_occupations[
+            ["OCCUPATION_LABEL", "EXPERIENCE_REQUIRED_PERCENTAGE", "DRIVER_LICENSE_PERCENTAGE", "OWN_CAR_PERCENTAGE"]
+        ],
         on="OCCUPATION_LABEL",
-        how="left"
+        how="left",
     )
-    
+
     # Display the table with occupations and their vacancy counts and requirements
     st.markdown(f"#### Occupations within {selected_group}")
-    
+
     # Format merged data
     st.dataframe(
         merged_data,
@@ -198,22 +208,22 @@ if not requirements_occupations.empty:
             "OWN_CAR_PERCENTAGE": st.column_config.NumberColumn(
                 "% Requiring Car",
                 format="%.1f%%",
-            )
+            ),
         },
         hide_index=True,
-        width='stretch'
+        width="stretch",
     )
-    
+
     # Display a summary of requirements for the selected group
     if not requirements_group.empty:
         st.markdown(f"#### Overall Requirements for {selected_group}")
         col1, col2, col3 = st.columns(3)
-        
+
         # Extract the percentages (there should be just one row for the selected group)
         exp_pct = requirements_group["EXPERIENCE_REQUIRED_PERCENTAGE"].iloc[0]
         lic_pct = requirements_group["DRIVER_LICENSE_PERCENTAGE"].iloc[0]
         car_pct = requirements_group["OWN_CAR_PERCENTAGE"].iloc[0]
-        
+
         with col1:
             st.metric("Experience Required", f"{exp_pct:.1f}%")
         with col2:
@@ -230,10 +240,10 @@ else:
             "VACANCY_COUNT": st.column_config.NumberColumn(
                 "Number of Vacancies",
                 format="%d",
-            )
+            ),
         },
         hide_index=True,
-        width='stretch'
+        width="stretch",
     )
 
 # Add vertical spacing between sections
@@ -251,9 +261,9 @@ st.markdown(f"### Trends for {selected_occupation_field if selected_occupation_f
 
 # Filter the trends data for field level with daily granularity
 field_trends = df_trends_filtered[
-    (df_trends_filtered["TIME_GRANULARITY"] == "daily") & 
-    (df_trends_filtered["OCCUPATION_GROUP"].isna()) & 
-    (df_trends_filtered["OCCUPATION_LABEL"].isna())
+    (df_trends_filtered["TIME_GRANULARITY"] == "daily")
+    & (df_trends_filtered["OCCUPATION_GROUP"].isna())
+    & (df_trends_filtered["OCCUPATION_LABEL"].isna())
 ]
 
 # Sort the data by trend_date to ensure proper time series display
@@ -267,22 +277,19 @@ if not field_trends.empty:
         y="VACANCIES",
         color="OCCUPATION_FIELD" if selected_occupation_field == "All" else None,
         title=f"Vacancy Trends for {selected_occupation_field if selected_occupation_field != 'All' else 'All Fields'}",
-        labels={
-            "TREND_DATE": "Publication Date",
-            "VACANCIES": "Number of Vacancies"
-        },
-        height=400
+        labels={"TREND_DATE": "Publication Date", "VACANCIES": "Number of Vacancies"},
+        height=400,
     )
-    
+
     # Improve the layout and add markers for better visibility
-    fig_field_trends.update_traces(mode='lines+markers', marker=dict(size=6))
+    fig_field_trends.update_traces(mode="lines+markers", marker=dict(size=6))
     fig_field_trends.update_layout(
         xaxis_title="Publication Date",
         yaxis_title="Number of Vacancies",
         margin=dict(l=20, r=20, t=40, b=20),
-        hovermode="x unified"  # Show all values for the same x coordinate
+        hovermode="x unified",  # Show all values for the same x coordinate
     )
-    
+
     st.plotly_chart(fig_field_trends, use_container_width=True)
 else:
     st.info(f"No trend data available for {selected_occupation_field}. Please select a different occupation field.")
@@ -296,8 +303,7 @@ st.write("Select a specific occupation group to see its vacancy trends over time
 
 # Get unique occupation groups from the filtered trends data
 trend_groups = df_trends_filtered[
-    (df_trends_filtered["OCCUPATION_GROUP"].notna()) & 
-    (df_trends_filtered["OCCUPATION_LABEL"].isna())
+    (df_trends_filtered["OCCUPATION_GROUP"].notna()) & (df_trends_filtered["OCCUPATION_LABEL"].isna())
 ]["OCCUPATION_GROUP"].unique()
 
 # Sort the trend groups alphabetically
@@ -305,17 +311,13 @@ trend_groups = sorted(trend_groups)
 
 if len(trend_groups) > 0:
     # Create a selectbox for group selection
-    selected_trend_group = st.selectbox(
-        "Select an occupation group",
-        trend_groups,
-        key="trend_group_selector"
-    )
+    selected_trend_group = st.selectbox("Select an occupation group", trend_groups, key="trend_group_selector")
 
     # Filter the trends data for the selected group with daily granularity
     group_trends = df_trends_filtered[
-        (df_trends_filtered["TIME_GRANULARITY"] == "daily") & 
-        (df_trends_filtered["OCCUPATION_GROUP"] == selected_trend_group) & 
-        (df_trends_filtered["OCCUPATION_LABEL"].isna())
+        (df_trends_filtered["TIME_GRANULARITY"] == "daily")
+        & (df_trends_filtered["OCCUPATION_GROUP"] == selected_trend_group)
+        & (df_trends_filtered["OCCUPATION_LABEL"].isna())
     ]
 
     # Sort the data by trend_date to ensure proper time series display
@@ -328,27 +330,26 @@ if len(trend_groups) > 0:
             x="TREND_DATE",
             y="VACANCIES",
             title=f"Vacancy Trends for {selected_trend_group}",
-            labels={
-                "TREND_DATE": "Publication Date",
-                "VACANCIES": "Number of Vacancies"
-            },
-            height=400
+            labels={"TREND_DATE": "Publication Date", "VACANCIES": "Number of Vacancies"},
+            height=400,
         )
-        
+
         # Improve the layout and add markers for better visibility
-        fig_group_trends.update_traces(mode='lines+markers', marker=dict(size=6))
+        fig_group_trends.update_traces(mode="lines+markers", marker=dict(size=6))
         fig_group_trends.update_layout(
             xaxis_title="Publication Date",
             yaxis_title="Number of Vacancies",
             margin=dict(l=20, r=20, t=40, b=20),
-            hovermode="x unified"  # Show all values for the same x coordinate
+            hovermode="x unified",  # Show all values for the same x coordinate
         )
-        
+
         st.plotly_chart(fig_group_trends, use_container_width=True)
     else:
         st.info(f"No trend data available for {selected_trend_group}.")
 else:
-    st.warning(f"No occupation groups available for {selected_occupation_field}. Please select a different occupation field.")
+    st.warning(
+        f"No occupation groups available for {selected_occupation_field}. Please select a different occupation field."
+    )
 
 # Add vertical spacing between sections
 st.markdown("<div style='margin-top: 2rem;'></div>", unsafe_allow_html=True)
@@ -358,6 +359,6 @@ st.markdown("<div style='margin-top: 2rem;'></div>", unsafe_allow_html=True)
 # RAW DATA SECTION
 # ==================================
 # Add an expander for raw data
-#with st.expander("View Raw Data"):
+# with st.expander("View Raw Data"):
 #    st.markdown(f"## Raw data for selected occupation field: {selected_occupation_field}")
 #    st.dataframe(df_demand_filtered, width='stretch')

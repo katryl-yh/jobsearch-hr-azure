@@ -1,6 +1,7 @@
 import streamlit as st
-from .connect_data_warehouse import get_db_connection
+from jobmarket_streamlit.connect_data_warehouse import get_cached_ddb_conn
 
+MARTS_SCHEMA = "marts"
 MART_FOR_OCCUPATION_FIELDS = "mart_occupation_demand"
 _OPTION_LABEL_ALL = "All"  # for use with widgets
 
@@ -13,20 +14,18 @@ pages = {
     "Analysis": [
         st.Page("pages/page_demand.py", title="Demand Overview", icon="📈"),
         st.Page("pages/page_employer.py", title="Employer Overview", icon="🏢"),
-        st.Page("pages/page_urgency.py", title="Application Urgency", icon="⏳"),
         st.Page("pages/page_geography.py", title="Urgency by Region", icon="🌍"),
-        st.Page("pages/page_browser.py", title="Job Browser", icon="🔎"),
     ],
 }
 
 # -- get available occupation fields for widget
 
-con = get_db_connection([MART_FOR_OCCUPATION_FIELDS])
+conn = get_cached_ddb_conn()
 
-rel_occupation_fields = con.sql(
+rel_occupation_fields = conn.sql(
     query=f"""
 SELECT occupation_field
-FROM {MART_FOR_OCCUPATION_FIELDS}
+FROM {MARTS_SCHEMA}.{MART_FOR_OCCUPATION_FIELDS}
 GROUP BY 1
 ORDER BY 1 DESC;
 """

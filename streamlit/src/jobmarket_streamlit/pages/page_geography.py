@@ -3,9 +3,10 @@ from pathlib import Path
 import branca.colormap as colormap
 import folium
 import geopandas
-import streamlit as st
-from ..connect_data_warehouse import get_db_connection
 from streamlit_folium import st_folium
+
+import streamlit as st
+from jobmarket_streamlit.connect_data_warehouse import get_cached_ddb_conn
 
 # -- constants
 
@@ -22,6 +23,7 @@ GEOJSON_MUNICIPALITY_KEY = "id"
 MAP_LOCATION = [59.3293, 18.0686]  # Stockholm
 MAP_BOUNDS = [[55.33, 10.93], [69.06, 24.17]]  # Sweden
 
+MARTS_SCHEMA = "marts"
 MART_GEOGRAPHY = "mart_geography"
 MART_URGENCY_GEOGRAPHY = "mart_urgency_geography"
 LOAD_TABLES = [MART_URGENCY_GEOGRAPHY]  # Tables to load into DuckDB
@@ -63,11 +65,8 @@ def load_geopandas(path, key_column) -> geopandas.GeoDataFrame:
 st.set_page_config(page_title="Geographic Analysis", page_icon="🗺️")
 
 
-# -- cache datasets
+# -- load datasets
 
-
-# create cached in-memroy duckdb
-con = get_db_connection(LOAD_TABLES)
 
 # load geojson to cached geopandas
 gdf_region = load_geopandas(GEOJSON_REGION_PATH, GEOJSON_REGION_KEY)
@@ -96,8 +95,11 @@ selected_urgency_category = st.sidebar.selectbox(
 
 # -- query datasets
 
+# create duckdb connection
 
-rel_map_data = con.sql(
+conn = get_cached_ddb_conn()
+
+rel_map_data = conn.sql(
     query=f"""
 SELECT
     location_key as {LOCATION_KEY},
@@ -105,7 +107,7 @@ SELECT
     SUM(total_vacancies) as total_vacancies,
     SUM(total_job_ads) as total_job_ads,
 
-FROM {MART_URGENCY_GEOGRAPHY}
+FROM {MARTS_SCHEMA}.{MART_URGENCY_GEOGRAPHY}
 WHERE
     (occupation_field = $occupation_field
         OR $occupation_field = $label_all)
@@ -127,11 +129,9 @@ ORDER BY total_vacancies DESC;
     },
 )
 
+df_map_data = rel_map_data.df()
 
 # -- create geopandas DF for map
-
-
-df_map_data = rel_map_data.df()
 
 gdf_base = gdf_region if selected_location_level == LOCATION_LEVEL_REGION else gdf_muni
 
