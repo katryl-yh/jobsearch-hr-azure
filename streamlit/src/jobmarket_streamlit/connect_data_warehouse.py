@@ -1,11 +1,12 @@
 from pathlib import Path
-
+from dotenv import load_dotenv
 import duckdb
 from pandas import DataFrame
-
+import os
 import streamlit as st
 
-DUCKDB_PATH = Path(__file__).parents[3] / "data/job_ads.duckdb"
+load_dotenv()
+DUCKDB_PATH = os.getenv("DUCKDB_PATH")
 STREAMLIT_DEFAULT_SCHEMA = "marts"  # MARTS_SCHEMA
 
 

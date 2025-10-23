@@ -8,13 +8,13 @@ from dagster_dbt import DbtCliResource, DbtProject, dbt_assets
 from dagster_duckdb import DuckDBResource
 from .defs.dlt_sources.jobsearch_source import jobsearch_source
 import dlt
-
-# data warehouse directory
 from pathlib import Path
-db_path = str(Path(__file__).parents[3] / "data/job_ads.duckdb")
+from dotenv import load_dotenv
 
-DBT_PROFILES_DIR = os.getenv("DBT_PROFILES_DIR", Path.home() / ".dbt")
+load_dotenv()
 
+DUCKDB_PATH = os.getenv("DUCKDB_PATH")
+DBT_PROFILES_DIR = os.getenv("DBT_PROFILES_DIR")
 
 # ==================== #
 #       dlt Asset      #
@@ -27,11 +27,9 @@ dlt_resource = DagsterDltResource()
     dlt_pipeline = dlt.pipeline(
         pipeline_name="jobsearch",
         dataset_name="staging",
-        destination=dlt.destinations.duckdb(db_path),
+        destination=dlt.destinations.duckdb(str(DUCKDB_PATH)),
     ),
 )
-
-
 def dlt_load(context: dg.AssetExecutionContext, dlt: DagsterDltResource): 
     yield from dlt.run(context=context)
 
@@ -105,7 +103,7 @@ defs = dg.Definitions(
     resources={
         "dlt": DagsterDltResource(),
         "dbt": dbt_resource,
-        "duckdb": DuckDBResource(database=db_path),
+        "duckdb": DuckDBResource(database=DUCKDB_PATH),
     },
     assets=[
         dlt_load, 
