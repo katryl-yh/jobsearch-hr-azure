@@ -1,122 +1,180 @@
 # ==================== #
-#       imports        #
+#       Imports        #
 # ==================== #
+
 import os
-import dagster as dg
-from dagster_dlt import DagsterDltResource, dlt_assets
-from dagster_dbt import DbtCliResource, DbtProject, dbt_assets
-from dagster_duckdb import DuckDBResource
-from .defs.dlt_sources.jobsearch_source import jobsearch_source
-import dlt
 from pathlib import Path
+
+import dlt
+from dagster_dbt import DbtCliResource, DbtProject, dbt_assets
+from dagster_dlt import DagsterDltResource, dlt_assets
+from dagster_duckdb import DuckDBResource
 from dotenv import load_dotenv
 
+import dagster as dg
+
+from .defs.dlt_sources.jobsearch_source import jobsearch_source
+
+# Load environment variables from .env file
 load_dotenv()
 
+# Path to DuckDB database file
 DUCKDB_PATH = os.getenv("DUCKDB_PATH")
+
+# Path to DBT profiles directory (contains connection configs)
 DBT_PROFILES_DIR = os.getenv("DBT_PROFILES_DIR")
 
+
 # ==================== #
-#       dlt Asset      #
+#       DLT Asset      #
 # ==================== #
 
-dlt_resource = DagsterDltResource() 
+# DLT resource for executing data pipeline loads
+dlt_resource = DagsterDltResource()
+
 
 @dlt_assets(
-    dlt_source = jobsearch_source(),
-    dlt_pipeline = dlt.pipeline(
+    # Source: Jobsearch API configuration
+    dlt_source=jobsearch_source(),
+    # Pipeline: Extract from API and load into DuckDB staging schema
+    dlt_pipeline=dlt.pipeline(
         pipeline_name="jobsearch",
+        # Target schema for raw/staging data
         dataset_name="staging",
+        # Destination: DuckDB warehouse
         destination=dlt.destinations.duckdb(str(DUCKDB_PATH)),
     ),
 )
-def dlt_load(context: dg.AssetExecutionContext, dlt: DagsterDltResource): 
+def dlt_load(context: dg.AssetExecutionContext, dlt: DagsterDltResource):
+    """
+    Asset: Extract job ads from Jobsearch API and load into DuckDB.
+
+    Creates asset: dlt_jobsearch_source_search
+    Data flows to: staging.job_ads_raw table
+    """
     yield from dlt.run(context=context)
 
+
 # ==================== #
-#       dbt Asset      #
+#       DBT Asset      #
 # ==================== #
 
-# Points to the dbt project path
+# Path to DBT project directory (3 levels up from this file)
 dbt_project_directory = Path(__file__).parents[3] / "dbt/jobmarket_dbt"
-# Define the path to your profiles.yml file (in your home directory)
 
-# instance of DbtProject with all necessary paths
-dbt_project = DbtProject(project_dir=dbt_project_directory,
-                         profiles_dir=DBT_PROFILES_DIR)
+# DBT project instance with project and profiles paths
+dbt_project = DbtProject(project_dir=dbt_project_directory, profiles_dir=DBT_PROFILES_DIR)
 
-# an instance from the dbt resource class to run dbt codes
+# DBT CLI resource for executing DBT commands
 dbt_resource = DbtCliResource(project_dir=dbt_project)
 
-# produce the manifest file
-# the manifest file let dagster understand the dependency between models
+# Generate manifest.json in development mode
+# Manifest defines model dependencies for Dagster's lineage graph
 dbt_project.prepare_if_dev()
 
-# create dbt asset
-@dbt_assets(manifest=dbt_project.manifest_path,) # path to the dbt manifest.json
-# note the dependency injection similar to that in dlt asset
+
+@dbt_assets(
+    # Path to manifest.json (defines all DBT models and dependencies)
+    manifest=dbt_project.manifest_path,
+)
 def dbt_models(context: dg.AssetExecutionContext, dbt: DbtCliResource):
-    yield from dbt.cli(["build"], context=context).stream() # stream() is for showing the progress realtime in dagster UI
+    """
+    Asset: Transform raw data using DBT models.
+
+    Creates assets: All models in warehouse and marts schemas
+    Data flows from: staging schema (loaded by DLT)
+    """
+    # Execute 'dbt build' command and stream progress to Dagster UI
+    yield from dbt.cli(["build"], context=context).stream()
 
 
 # ==================== #
-#         Job          #
+#         Jobs         #
 # ==================== #
 
+# Job: Extract and load job ads from API
 jobstream_stream_job = dg.define_asset_job(
     name="jobstream_stream_job",
+    # Only run the DLT asset
     selection=[
         dg.AssetKey("dlt_jobsearch_source_search"),
     ],
 )
 
+# Job: Transform data using DBT models
 job_dbt = dg.define_asset_job(
-    name="job_dbt", 
+    name="job_dbt",
+    # Run all DBT models in warehouse and marts schemas
     selection=dg.AssetSelection.key_prefixes("warehouse", "marts"),
-    )
-        
+)
+
+
 # ==================== #
 #       Schedule       #
 # ==================== #
 
+# Schedule: Run data extraction 3 times daily on weekdays
 jobstream_stream_schedule = dg.ScheduleDefinition(
     name="jobstream_stream_schedule",
     job=jobstream_stream_job,
+    # 7 AM, 12 PM, 5 PM on Monday-Friday
     cron_schedule="0 7,12,17 * * 1-5",
 )
+
 
 # ==================== #
 #        Sensor        #
 # ==================== #
 
-#sensor for the second job
-@dg.asset_sensor(asset_key=dg.AssetKey("dlt_jobsearch_source_search"),
-                 job_name="job_dbt")
+
+# Sensor: Automatically trigger DBT job when new data is loaded
+@dg.asset_sensor(
+    # Watch for materialization of DLT asset
+    asset_key=dg.AssetKey("dlt_jobsearch_source_search"),
+    # Trigger the DBT transformation job
+    job_name="job_dbt",
+)
 def dlt_load_sensor():
+    """
+    Sensor: Triggers DBT transformations after DLT load completes.
+
+    Data flow: DLT loads raw data -> Sensor detects -> DBT transforms
+    """
     yield dg.RunRequest()
+
 
 # ==================== #
 #     Definitions      #
 # ==================== #
 
+# Main Dagster definitions object
+# Wires together all resources, assets, jobs, sensors, and schedules
 defs = dg.Definitions(
+    # Shared resources available to all assets
     resources={
+        # DLT for data ingestion
         "dlt": DagsterDltResource(),
+        # DBT for data transformation
         "dbt": dbt_resource,
+        # DuckDB connection
         "duckdb": DuckDBResource(database=DUCKDB_PATH),
     },
+    # Data assets to materialize
     assets=[
-        dlt_load, 
-        dbt_models
-        ],
-    jobs=[
-        jobstream_stream_job,
-        job_dbt
+        dlt_load,  # Raw data extraction
+        dbt_models,  # Data transformation
     ],
+    # Jobs that can be executed
+    jobs=[
+        jobstream_stream_job,  # Extract job
+        job_dbt,  # Transform job
+    ],
+    # Event-driven automation
     sensors=[
-        dlt_load_sensor
-        ],
+        dlt_load_sensor  # Auto-trigger DBT after DLT
+    ],
+    # Time-based automation
     schedules=[
-        jobstream_stream_schedule,
+        jobstream_stream_schedule,  # 3x daily extraction
     ],
 )
