@@ -106,3 +106,5 @@ package-lock.*
 
 # Project-Specific (Large/Transient Data)
 data/
+
+!.env.azure.example
