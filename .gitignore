@@ -108,3 +108,12 @@ package-lock.*
 data/
 
 !.env.*.example
+
+# terraform related files
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars.backup
+crash.log
+.terraform.lock.*
+*.tfplan
