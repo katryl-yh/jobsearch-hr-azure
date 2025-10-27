@@ -4,7 +4,7 @@ set -e
 export MSYS_NO_PATHCONV=1
 
 # Load environment variables
-export $(cat .env.pipeline | xargs)
+export $(cat .env.dashboard | xargs)
 
 # Login to ACR
 echo "🔐 Logging into ACR..."
@@ -14,20 +14,20 @@ az acr login --name $ACR_NAME
 REGISTRY="${ACR_NAME}.azurecr.io"
 
 # Set image tags
-DAGSTER_IMAGE="${REGISTRY}/${CONTAINER_NAME}:${TAG:-latest}"
+DASHBOARD_IMAGE="${REGISTRY}/${CONTAINER_NAME}:${TAG:-latest}"
 
-echo "🏗️  Building Dagster image for AMD64..."
+echo "🏗️  Building Dashboard image for AMD64..."
 docker buildx build \
   --platform linux/amd64 \
-  --file Dockerfile.elt \
-  --tag $DAGSTER_IMAGE \
+  --file Dockerfile.serve \
+  --tag $DASHBOARD_IMAGE \
   --push \
   .
 
-echo "✅ Dagster image pushed: $DAGSTER_IMAGE"
+echo "✅ Dashboard image pushed: $DASHBOARD_IMAGE"
 
 echo ""
 echo "📦 Images built and pushed:"
-echo "   - $DAGSTER_IMAGE"
+echo "   - $DASHBOARD_IMAGE"
 echo ""
 echo "✅ Build complete!"
