@@ -4,7 +4,7 @@ set -e
 export MSYS_NO_PATHCONV=1
 
 # Load environment variables
-export $(cat .env.azure | xargs)
+export $(cat .env.pipeline | xargs)
 
 # Login to ACR
 echo "🔐 Logging into ACR..."
