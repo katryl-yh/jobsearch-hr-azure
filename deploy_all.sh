@@ -6,6 +6,38 @@ export MSYS_NO_PATHCONV=1
 
 echo "🚀 Starting complete infrastructure and application deployment..."
 echo ""
+# --- AZ LOGIN CHECK ---
+echo "⚙️ Checking Azure CLI login status..."
+az account show > /dev/null 2>&1
+if [ $? -ne 0 ]; then
+  echo "❌ You are not logged in to Azure CLI."
+  echo "Please run 'az login' and authenticate before running this script."
+  exit 1
+fi
+echo "✅ Azure CLI logged in."
+
+export ARM_SUBSCRIPTION_ID=$(az account show --query id -o tsv)
+echo "✅ ARM_SUBSCRIPTION_ID set to: $ARM_SUBSCRIPTION_ID"
+
+# --- DOCKER RUNNING CHECK ---
+echo "🐳 Checking Docker installation and daemon status..."
+# 1. Check if 'docker' command is available
+if ! command -v docker &> /dev/null
+then
+    echo "❌ Docker command not found."
+    echo "Please ensure Docker is installed and added to your system's PATH."
+    echo "For installation instructions, visit: https://docs.docker.com/get-docker/"
+    exit 1
+fi
+echo "✅ Docker command found."
+# 2. Check if Docker daemon is running
+if ! docker info &> /dev/null
+then
+    echo "❌ Docker daemon is not running or not accessible."
+    echo "Please start Docker Desktop/daemon before running this script."
+    exit 1
+fi
+echo "✅ Docker daemon is running."
 
 # Step 1: Deploy Infrastructure (terraform-01)
 echo "📋 Step 1: Deploying Infrastructure..."
