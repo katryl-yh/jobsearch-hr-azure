@@ -107,4 +107,9 @@ resource "azurerm_storage_share_file" "profiles" {
   storage_share_id     = azurerm_storage_share.data.url
   path                 = ".dbt"  # Directory path within the share
   source               = "${path.root}/profiles.yml"
+
+  depends_on = [
+    azurerm_storage_share_directory.dbt,
+    local_file.profiles
+  ]
 }
