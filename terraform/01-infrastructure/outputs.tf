@@ -47,5 +47,16 @@ output "location" {
 }
 
 output "pipeline_container_name" {
+  description = "Name of the pipeline container"
   value = var.pipeline_container_name
+}
+
+output "dashboard_container_name" {
+  description = "Name of the dashboard container"
+  value = var.dashboard_container_name
+}
+
+output "duckdb_path" {
+  description = "Path to the DuckDB database"
+  value       = var.duckdb_path
 }
