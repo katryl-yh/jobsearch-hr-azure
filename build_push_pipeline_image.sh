@@ -1,10 +1,11 @@
 #!/bin/bash
 set -e
 
+# Disable path conversion on Windows Git Bash
 export MSYS_NO_PATHCONV=1
 
-# Load environment variables
-export $(cat .env.pipeline | xargs)
+# Load and clean environment variables
+export $(cat .env.pipeline | sed 's/\r$//' | xargs)
 
 # Login to ACR
 echo "🔐 Logging into ACR..."
