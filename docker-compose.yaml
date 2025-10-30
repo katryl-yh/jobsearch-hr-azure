@@ -12,7 +12,7 @@ services:
       - DUCKDB_PATH=/mnt/data/job_ads.duckdb
     volumes:
       # Persist Dagster metadata and logs
-      - dagster-home:/mnt/dagster_home
+      # - dagster-home:/mnt/dagster_home
       # DBT configuration files
       - ./.dbt:/mnt/.dbt
       # Shared data directory

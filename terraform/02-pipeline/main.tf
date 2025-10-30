@@ -51,7 +51,7 @@ resource "azurerm_container_group" "dagster_pipeline" {
     # Environment variables for Dagster
     environment_variables = {
       DUCKDB_PATH          = var.duckdb_path
-      DAGSTER_HOME         = var.dagster_home
+      # DAGSTER_HOME         = var.dagster_home  # disabled for cost-fix, DAGSTER_HOME -> /tmp/dagster_home
       DBT_PROFILES_DIR     = var.dbt_profiles_dir
     }
 

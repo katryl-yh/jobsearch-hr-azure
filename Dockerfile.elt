@@ -46,13 +46,17 @@ ENV PATH="/app/.venv/bin:$PATH" \
 # DBT_PROFILES_DIR: Directory containing DBT profiles.yml (connection configs)
 # DBT_PROJECT_DIR: Root directory of the DBT project
 # DUCKDB_PATH: Full path to DuckDB database file
-ENV DAGSTER_HOME=/mnt/dagster_home \
-    DBT_PROFILES_DIR=/mnt/.dbt \
+ENV DBT_PROFILES_DIR=/mnt/.dbt \
     DBT_PROJECT_DIR=/app/dbt/jobmarket_dbt \
     DUCKDB_PATH=/mnt/data/warehouse.duckdb
 
-WORKDIR /app
+# Cost-saving fix for dev-container: Set dagster_home/storage to /tmp/
+ENV DAGSTER_HOME=/tmp/dagster_home \
+    DAGSTER_SQLITE_STORAGE_BASE_DIR=/tmp/dagster_home/storage
+RUN mkdir -p /tmp/dagster_home/storage
+COPY --from=builder /app/dagster/dagster.yaml /tmp/dagster_home/dagster.yaml
 
+WORKDIR /app
 EXPOSE 3000
 
 # Start Dagster web server on all interfaces
