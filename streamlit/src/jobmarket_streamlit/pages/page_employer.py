@@ -109,7 +109,7 @@ fig_top_employers.update_layout(
     },
     margin=dict(l=20, r=20, t=40, b=20)  # Adjust margins
 )
-st.plotly_chart(fig_top_employers, width='stretch')
+st.plotly_chart(fig_top_employers, use_container_width=True)
 
 # ==================================
 # GROUP SECTION
@@ -144,7 +144,7 @@ if len(available_groups) > 0:
             )
         },
         hide_index=True,
-        width='stretch'
+        use_container_width=True
     )
 else:
     st.write("No occupation groups available for the selected field.")
