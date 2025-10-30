@@ -117,8 +117,7 @@ job_dbt = dg.define_asset_job(
 jobstream_stream_schedule = dg.ScheduleDefinition(
     name="jobstream_stream_schedule",
     job=jobstream_stream_job,
-    # 7 AM, 12 PM, 5 PM on Monday-Friday
-    cron_schedule="0 7,12,17 * * 1-5",
+    cron_schedule="0 8 * * *",
 )
 
 
