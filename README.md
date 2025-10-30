@@ -1,10 +1,64 @@
-# jobmarket-hr-analytics
+# jobsearch-hr-azure
 
 **Modern Data Stack for Swedish Job Market Analytics**
 
 This project implements an end-to-end data analytics platform that extracts, transforms, and visualizes Swedish job market data from Arbetsförmedlingen's JobTech API. Built for talent acquisition specialists and HR professionals to make data-driven hiring decisions.
 
 **Created by:** Hugo Lundberg, Katrin Rylander
+
+## 🎯 What This Platform Does
+
+This platform transforms raw Swedish job market data into actionable insights for HR professionals and talent acquisition specialists. It automatically extracts job postings from Arbetsförmedlingen's JobTech API, processes them through a modern data pipeline that is deployed on Azure cloud infrastructure, and provides interactive analytics through a web dashboard.
+
+**Key Capabilities:**
+- **📈 Demand Analytics**: Track hiring trends by occupation, industry, and region
+- **🏢 Employer Insights**: Identify top employers and recruitment patterns  
+- **🌍 Geographic Analysis**: Visualize job distribution across Swedish regions
+- **📊 Real-time Dashboards**: Interactive visualizations updated daily
+- **🔄 Automated Pipeline**: Scheduled data extraction and transformation
+
+## 🚀 Quick Start Guide
+
+### Prerequisites
+Before deploying, ensure you have:
+- **Azure CLI** installed and authenticated (`az login`)
+- **Docker** installed and running
+- **Terraform** installed (v1.0+)
+- **Azure subscription** with contributor permissions
+
+### One-Command Deployment
+
+```bash
+# Deploy entire platform to Azure (takes ~10-15 minutes)
+chmod +x deploy_all.sh
+./deploy_all.sh
+```
+
+**What happens during deployment:**
+1. ⚡ Creates Azure infrastructure (Resource Group, Container Registry, Storage)
+2. 🐳 Builds and pushes Docker containers
+3. 🔄 Deploys data pipeline (Dagster orchestration)
+4. 📊 Deploys analytics dashboard (Streamlit web app)
+
+### What You'll Get After Deployment
+
+Once deployment completes, you'll have access to:
+
+- **📊 Analytics Dashboard**: `https://<your-webapp-name>.azurewebsites.net`
+  - Interactive Swedish job market insights
+  - Multi-page dashboard with demand, employer, and geographic analysis
+  - Real-time filtering and drill-down capabilities
+
+- **🔄 Pipeline Management**: `http://<your-container-fqdn>:3000`
+  - Dagster UI for monitoring data extraction and transformation
+  - Scheduled jobs running daily at 8 AM
+  - Asset lineage and job execution history
+
+### First Steps After Deployment
+1. **Access the Dashboard**: Open the provided dashboard URL
+2. **Verify Data Pipeline**: Check the Dagster UI to ensure jobs are running
+3. **Explore Analytics**: Navigate through demand, employer, and geography pages
+4. **Monitor Pipeline**: Data updates automatically - check back daily for new insights
 
 ## 🏗️ Architecture Overview
 
@@ -32,7 +86,7 @@ graph TB
         class ACR,ACI,WEBAPP,STORAGE infra
     end
 
-    subgraph Pipeline ["🔄 Data Pipeline (Dagster + DLT + DBT)"]
+    subgraph Pipeline ["<nobr>Data Pipeline (Dagster + DLT + DBT)</nobr>"]
         direction TB
         DLT["DLT Source<br/>jobsearch_source.py"]
         
@@ -66,7 +120,7 @@ graph TB
         class DLT ingest
     end
 
-    subgraph Dashboard ["📊 Analytics Dashboard"]
+    subgraph Dashboard ["Analytics Dashboard"]
         STREAMLIT[("Streamlit App<br/>Multi-page Analytics")]
         class STREAMLIT analytics
     end
@@ -84,13 +138,225 @@ graph TB
     %% Infrastructure Dependencies
     ACR --> ACI
     ACR --> WEBAPP
-    STORAGE --> ACI
+    STORAGE <--> ACI
     STORAGE --> WEBAPP
     ACI --> Pipeline
     WEBAPP --> Dashboard
 ```
 
-## 📁 Project Structure
+**Data Flow:**
+1. **Extract**: Automated collection from Swedish JobTech API (daily)
+2. **Transform**: Data cleaning and modeling using DBT (star schema)
+3. **Load**: Analytical marts optimized for dashboard queries
+4. **Visualize**: Interactive Streamlit dashboard with Swedish job market insights
+
+## 📊 Dashboard Features
+
+### 🎯 Key Analytics Available
+
+**📈 Demand Overview:**
+- Total active job vacancies across Sweden
+- Top occupation groups and specific occupations
+- Hiring trends over time with daily granularity
+- Field-specific filtering (IT, Healthcare, Engineering, etc.)
+
+**🏢 Employer Analysis:**
+- Top employers by vacancy count
+- Hiring patterns and recruitment trends
+- Industry-specific employer insights
+- Geographic distribution of employers
+
+**🌍 Geographic Analysis:**
+- Interactive maps of Swedish regions and municipalities
+- Vacancy distribution by location
+- Regional hiring demand visualization
+- Application deadline urgency mapping
+
+**Interactive Features:**
+- **Global Filters**: Occupation field selection affects all analysis
+- **Drill-down Navigation**: From broad fields to specific occupations
+- **Real-time Updates**: Data refreshed daily via automated pipeline
+
+### 📋 Manual Deployment (Alternative)
+
+If you prefer step-by-step control:
+
+#### **1. Foundation Infrastructure**
+```bash
+cd terraform/01-infrastructure
+terraform init
+terraform apply
+```
+
+#### **2. Build & Push Container Images**
+```bash
+# Pipeline container
+chmod +x build_push_pipeline_image.sh
+./build_push_pipeline_image.sh
+
+# Dashboard container  
+chmod +x build_push_dashboard_image.sh
+./build_push_dashboard_image.sh
+```
+
+#### **3. Deploy Pipeline**
+```bash
+cd terraform/02-pipeline
+terraform init
+terraform apply
+```
+
+#### **4. Deploy Dashboard**
+```bash
+cd terraform/03-dashboard
+terraform init
+terraform apply
+```
+
+## 🔧 Troubleshooting
+
+### Common Issues
+
+**Deployment fails with Azure CLI errors:**
+```bash
+# Re-authenticate with Azure
+az login
+az account set --subscription "<your-subscription-id>"
+```
+
+**Container build fails:**
+```bash
+# Ensure Docker is running
+docker --version
+```
+
+**Dashboard not loading:**
+- Check Azure Web App logs in Azure Portal
+- Verify container registry authentication
+- Ensure file share is properly mounted
+
+**Pipeline not running:**
+- Access Dagster UI at the provided port
+- Check container logs in Azure Container Instance
+
+## 🏗️ Why This Architecture?
+
+### ✅ **User Benefits**
+- **Always Available**: Cloud-hosted dashboard accessible 24/7
+- **Auto-Updates**: Fresh data without manual intervention
+- **Cost-Effective**: Pay-per-use Azure services
+- **Scalable**: Handles growing data volumes automatically
+
+### ✅ **Technical Benefits**
+- **Containerized Services**: Easy scaling and maintenance
+- **Infrastructure as Code**: Reproducible deployments
+- **Modern Data Stack**: Industry-standard tools (Dagster, DBT, DuckDB)
+- **Serverless Components**: No server management required
+
+---
+
+## 📚 Technical Documentation
+
+<details>
+<summary>🔧 Advanced Configuration & Development</summary>
+
+## ⚙️ Configuration Details
+
+### 🔑 Environment Variables
+
+**Auto-generated by Terraform:**
+- `.env.pipeline`: Pipeline container configuration
+- `.env.dashboard`: Dashboard container configuration  
+- `.dbt/profiles.yml`: DBT connection profiles
+
+### 🗃️ Data Storage
+
+**DuckDB Database:** 
+- **Local Development**: `data/job_ads.duckdb`
+- **Azure Production**: `/mnt/data/job_ads.duckdb` (mounted from Azure File Share)
+
+**Schemas:**
+- `staging`: Raw API data loaded by DLT
+- `warehouse`: Star schema (dimensions + facts) created by DBT
+- `marts`: Business-ready aggregated views for dashboard
+
+## 🛠️ Infrastructure Details
+
+### 🏗️ Foundation Infrastructure (`terraform/01-infrastructure`)
+**Purpose:** Creates core Azure resources and shared configuration
+
+**Resources Created:**
+- **Resource Group:** Container for all project resources
+- **Azure Container Registry (ACR):** Private Docker image registry
+- **Storage Account + File Share:** Persistent storage for DuckDB and configuration
+- **Directory Structure:** Pre-creates folders in file share (`/dagster_home`, `.dbt`, `data`)
+- **Configuration Files:** Generates `profiles.yml` and `.env` files
+
+### 🔄 Pipeline Deployment (`terraform/02-pipeline`)
+**Purpose:** Deploys the Dagster orchestration platform as a containerized service
+
+**Resources Created:**
+- **Azure Container Instance (ACI):** Runs Dagster webserver + daemon
+- **Persistent Storage Mount:** Connects to shared file share at `/mnt`
+- **Health Probes:** Liveness and readiness checks for container stability
+- **Public IP + DNS:** Accessible Dagster UI at `http://<fqdn>:3000`
+
+### 📊 Dashboard Deployment (`terraform/03-dashboard`)
+**Purpose:** Deploys Streamlit analytics dashboard as a scalable web application
+
+**Resources Created:**
+- **App Service Plan:** Linux-based hosting plan (B1 SKU)
+- **Azure Web App:** Container-based web application
+- **Storage Mount:** Same file share mounted for DuckDB access
+- **Container Registry Integration:** Pulls dashboard image from ACR
+
+## 📦 Development Environment
+
+### 🐳 Local Development with Docker Compose
+
+```bash
+# Start local development environment
+docker-compose up --build
+
+# Access services locally
+# - Dashboard: http://localhost:8501
+# - Pipeline UI: http://localhost:3000
+```
+
+### 🏗️ Dependency Management
+
+This project uses **UV** (ultra-fast Python package manager) with **workspace configuration**:
+
+```bash
+# Install all workspace dependencies
+uv sync --all-packages
+
+# Add new dependency to specific workspace
+cd dagster/  # or dbt/ or streamlit/
+uv add new-package-name
+```
+
+### 🔄 Data Pipeline Details
+
+**Dagster Assets:**
+- **`dlt_load`**: Extracts job data from JobTech API using DLT source
+- **`dbt_models`**: Transforms raw data using DBT models
+
+**DBT Model Layers:**
+1. **Staging** (`src_*.sql`): Raw data cleaning and normalization
+2. **Warehouse** (`dim_*.sql`, `fct_*.sql`): Star schema with dimensions and facts
+3. **Marts** (`mart_*.sql`): Business-ready aggregated views
+
+**Automation:**
+- **Schedule**: daily extraction at 8 AM
+- **Sensor**: Auto-triggers DBT when new data arrives
+
+</details>
+
+<details>
+<summary>📁 Project Structure</summary>
+
+## 📁 Complete Project Structure
 
 ```
 jobmarket-hr-analytics/
@@ -142,431 +408,10 @@ jobmarket-hr-analytics/
     └── .env.*                   # Environment configurations
 ```
 
-## 🛠️ Multi-Stage Infrastructure & Deployment Strategy
-
-### 🏗️ Foundation Infrastructure (`terraform/01-infrastructure`)
-**Purpose:** Creates core Azure resources and shared configuration
-
-**Resources Created:**
-- **Resource Group:** Container for all project resources
-- **Azure Container Registry (ACR):** Private Docker image registry
-- **Storage Account + File Share:** Persistent storage for DuckDB and configuration
-- **Directory Structure:** Pre-creates folders in file share (`/dagster_home`, `.dbt`, `data`)
-- **Configuration Files:** Generates `profiles.yml` and `.env` files
-
-**Key Outputs:**
-```hcl
-# Used by subsequent Terraform modules
-resource_group_name
-container_registry_name
-storage_account_name
-file_share_name
-duckdb_path
-```
-
-### 🔄 Pipeline Deployment (`terraform/02-pipeline`)
-**Purpose:** Deploys the Dagster orchestration platform as a containerized service
-
-**Resources Created:**
-- **Azure Container Instance (ACI):** Runs Dagster webserver + daemon
-- **Persistent Storage Mount:** Connects to shared file share at `/mnt`
-- **Health Probes:** Liveness and readiness checks for container stability
-- **Public IP + DNS:** Accessible Dagster UI at `http://<fqdn>:3000`
-
-**Container Configuration:**
-```yaml
-Environment Variables:
-  DUCKDB_PATH: /mnt/data/job_ads.duckdb
-  DAGSTER_HOME: /mnt/dagster_home
-  DBT_PROFILES_DIR: /mnt/.dbt
-
-Volume Mounts:
-  /mnt: Azure File Share (persistent storage)
-
-Health Checks:
-  Liveness: HTTP GET / on port 3000 (120s initial delay)
-  Readiness: HTTP GET / on port 3000 (10s initial delay)
-```
-
-### 📊 Dashboard Deployment (`terraform/03-dashboard`)
-**Purpose:** Deploys Streamlit analytics dashboard as a scalable web application
-
-**Resources Created:**
-- **App Service Plan:** Linux-based hosting plan (B1 SKU)
-- **Azure Web App:** Container-based web application
-- **Storage Mount:** Same file share mounted for DuckDB access
-- **Container Registry Integration:** Pulls dashboard image from ACR
-
-**Web App Configuration:**
-```yaml
-Application Stack:
-  Runtime: Docker Container
-  Image: <acr-name>.azurecr.io/jobmarket-dashboard:latest
-  Port: 8501 (Streamlit default)
-
-Storage Mount:
-  Mount Path: /mnt
-  Source: Azure File Share (shared with pipeline)
-
-App Settings:
-  DUCKDB_PATH: /mnt/data/job_ads.duckdb
-  WEBSITES_PORT: 8501
-```
-
-## 📦 Dependency Management with UV & `pyproject.toml`
-
-This project uses **UV** (ultra-fast Python package manager) with **workspace configuration** for dependency management.
-
-### 🏗️ Workspace Structure
-
-The root `pyproject.toml` defines a **workspace** with multiple sub-projects:
-
-```toml
-[tool.uv.workspace]
-members = ["dagster", "dbt", "streamlit"]
-```
-
-Each workspace member has its own `pyproject.toml`:
-- `dagster/pyproject.toml` - Pipeline dependencies (Dagster, DLT, DuckDB)
-- `dbt/pyproject.toml` - Transformation dependencies (dbt-core, dbt-duckdb)
-- `streamlit/pyproject.toml` - Dashboard dependencies (Streamlit, Plotly, Pandas)
-
-### 🚀 Installation & Usage
-
-#### **Initial Setup (All Packages)**
-```bash
-# Install all workspace dependencies
-uv sync --all-packages
-```
-> ⚠️ **Note:** `uv sync` without `--all-packages` only installs root dependencies
-
-#### **Adding New Dependencies**
-```bash
-# Navigate to specific workspace
-cd dagster/  # or dbt/ or streamlit/
-
-# Add dependency to that workspace
-uv add pandas
-
-# Update lockfile
-uv lock
-```
-
-#### **Python Version Management**
-```bash
-# Pin Python version for project
-uv python pin 3.11
-
-# Use specific Python version
-uv sync --python 3.11
-```
-
-**Benefits of this approach:**
-- ✅ **Isolation:** Each service has its own dependencies
-- ✅ **Performance:** UV is 10-100x faster than pip
-- ✅ **Reproducibility:** Unified lockfile ensures consistent environments
-- ✅ **Docker-friendly:** Works seamlessly in containerized environments
-
-## 🐳 Container Strategy
-
-### 📋 Docker Compose (Local Development)
-
-`docker-compose.yaml` provides a local development environment:
-
-```yaml
-services:
-  dagster:
-    build:
-      dockerfile: Dockerfile.elt
-    ports:
-      - "3000:3000"
-    volumes:
-      - ./data:/app/data
-    
-  streamlit:
-    build:
-      dockerfile: Dockerfile.serve
-    ports:
-      - "8501:8501"
-    volumes:
-      - ./data:/app/data
-```
-
-### 🏗️ Multi-Stage Docker Images
-
-#### **Pipeline Image (`Dockerfile.elt`)**
-```dockerfile
-# Stage 1: UV installer
-FROM ghcr.io/astral-sh/uv:python3.11-bookworm-slim AS uv
-
-# Stage 2: Dependencies
-FROM python:3.11-slim AS deps
-COPY --from=uv /uv /uvx /usr/local/bin/
-COPY pyproject.toml uv.lock ./
-RUN uv sync --frozen --no-install-project
-
-# Stage 3: Application
-FROM python:3.11-slim
-COPY --from=deps /.venv /.venv
-ENV PATH="/.venv/bin:$PATH"
-COPY . /app
-WORKDIR /app
-EXPOSE 3000
-CMD ["dagster", "dev", "-h", "0.0.0.0", "-p", "3000"]
-```
-
-#### **Dashboard Image (`Dockerfile.serve`)**
-```dockerfile
-# Similar multi-stage pattern
-FROM ghcr.io/astral-sh/uv:python3.11-bookworm-slim AS uv
-FROM python:3.11-slim AS deps
-# ... dependency installation
-FROM python:3.11-slim
-# ... application setup
-EXPOSE 8501
-CMD ["streamlit", "run", "src/jobmarket_streamlit/app.py"]
-```
-
-**Multi-stage benefits:**
-- 🔥 **Smaller Images:** Excludes build tools from final image
-- ⚡ **Faster Builds:** Cached dependency layers
-- 🔒 **Security:** Minimal attack surface in production image
-
-### 🚀 Container Build & Push Scripts
-
-#### **Pipeline Image Building**
-
-`build_push_pipeline_image.sh`:
-```bash
-#!/bin/bash
-# Load environment variables
-export $(cat .env.pipeline | xargs)
-
-# Login to Azure Container Registry
-az acr login --name $ACR_NAME
-
-# Build and push for AMD64 (Azure compatibility)
-docker buildx build \
-  --platform linux/amd64 \
-  --file Dockerfile.elt \
-  --tag ${ACR_NAME}.azurecr.io/${CONTAINER_NAME}:${TAG} \
-  --push \
-  .
-```
-
-#### **Dashboard Image Building**
-
-`build_push_dashboard_image.sh`:
-```bash
-#!/bin/bash
-# Similar pattern for dashboard container
-export $(cat .env.dashboard | xargs)
-# ... build and push dashboard image
-```
-
-#### **Environment Configuration**
-
-**`.env.pipeline`** (Generated by Terraform):
-```env
-ACR_NAME=acr123abc
-CONTAINER_NAME=jobmarket-pipeline
-TAG=latest
-DUCKDB_PATH=/mnt/data/job_ads.duckdb
-```
-
-**`.env.dashboard`** (Generated by Terraform):
-```env
-ACR_NAME=acr123abc
-CONTAINER_NAME=jobmarket-dashboard
-TAG=latest
-DUCKDB_PATH=/mnt/data/job_ads.duckdb
-```
-
-## 🔄 Data Pipeline Architecture
-
-### 📊 Dagster Orchestration (`dagster/src/jobmarket_pipelines/definitions.py`)
-
-**Assets:**
-- **`dlt_load`**: Extracts job data from JobTech API using DLT source
-- **`dbt_models`**: Transforms raw data using DBT models
-
-**Jobs:**
-- **`jobstream_stream_job`**: Runs data extraction
-- **`job_dbt`**: Runs DBT transformations
-
-**Automation:**
-- **Schedule**: 3x daily extraction (7 AM, 12 PM, 5 PM, Mon-Fri)
-- **Sensor**: Auto-triggers DBT when new data arrives
-
-### 🔄 Data Transformation (DBT)
-
-**Model Layers:**
-1. **Staging** (`src_*.sql`): Raw data cleaning and normalization
-2. **Warehouse** (`dim_*.sql`, `fct_*.sql`): Star schema with dimensions and facts
-3. **Marts** (`mart_*.sql`): Business-ready aggregated views
-
-**Key Marts:**
-- `mart_occupation_demand`: Demand by occupation field/group
-- `mart_employer_demand`: Top employers and hiring trends
-- `mart_geography`: Regional job distribution
-- `mart_trends`: Time-series vacancy trends
-
-## 📊 Analytics Dashboard
-
-### 🏠 Multi-Page Streamlit App
-
-**Main Entry Point:** `streamlit/src/jobmarket_streamlit/app.py`
-
-**Dashboard Pages:**
-- **🏠 Homepage**: Project overview and navigation
-- **📈 Demand Overview**: Occupation demand trends and analysis
-- **🏢 Employer Analysis**: Top employers and hiring patterns
-- **🌍 Geographic Analysis**: Regional job distribution with interactive maps
-
-### 🔗 Data Connection
-
-**Data Warehouse Connection**:
-```python
-@st.cache_resource
-def get_cached_ddb_conn(read_only: bool = True):
-    """Cached DuckDB connection for Streamlit"""
-    return duckdb.connect(str(DUCKDB_PATH), read_only=read_only)
-
-@st.cache_data  
-def get_cached_ddb_df(table: str, schema: str = "marts"):
-    """Cached DataFrame from DuckDB table"""
-    # Fetches optimized mart tables for dashboard
-```
-
-## 🚀 Deployment Guide
-
-### 🎯 One-Command Deployment
-
-```bash
-# Deploy entire infrastructure + applications
-./deploy_all.sh
-```
-
-**What this does:**
-1. **Infrastructure**: Deploys foundation Azure resources
-2. **Images**: Builds and pushes Docker containers to ACR
-3. **Pipeline**: Deploys Dagster orchestration platform
-4. **Dashboard**: Deploys Streamlit analytics web app
-
-### 📋 Step-by-Step Deployment
-
-#### **1. Foundation Infrastructure**
-```bash
-cd terraform/01-infrastructure
-terraform init
-terraform plan
-terraform apply
-```
-
-#### **2. Build & Push Container Images**
-```bash
-# Pipeline container
-./build_push_pipeline_image.sh
-
-# Dashboard container  
-./build_push_dashboard_image.sh
-```
-
-#### **3. Deploy Pipeline**
-```bash
-cd terraform/02-pipeline
-terraform init
-terraform apply
-```
-
-#### **4. Deploy Dashboard**
-```bash
-cd terraform/03-dashboard
-terraform init
-terraform apply
-```
-
-### 🔗 Access Points
-
-After deployment:
-- **📊 Dashboard**: `https://<webapp-name>.azurewebsites.net`
-- **🔄 Pipeline UI**: `http://<container-fqdn>:3000`
-- **📁 Storage**: Mounted at `/mnt` in both containers
-
-## ⚙️ Configuration
-
-### 🔑 Environment Variables
-
-**Required for deployment:**
-- Azure CLI authenticated (`az login`)
-- Docker installed and running
-- Terraform installed
-
-**Auto-generated by Terraform:**
-- `.env.pipeline`: Pipeline container configuration
-- `.env.dashboard`: Dashboard container configuration  
-- `.dbt/profiles.yml`: DBT connection profiles
-
-### 🗃️ Data Storage
-
-**DuckDB Database:** `data/job_ads.duckdb`
-- **Local Development**: `data/job_ads.duckdb`
-- **Azure Production**: `/mnt/data/job_ads.duckdb` (mounted from Azure File Share)
-
-**Schemas:**
-- `staging`: Raw API data loaded by DLT
-- `warehouse`: Star schema (dimensions + facts) created by DBT
-- `marts`: Business-ready aggregated views for dashboard
-
-## 📈 Dashboard Features
-
-### 🎯 Key Metrics & Visualizations
-
-**📊 Demand Overview:**
-- Total active vacancies with field-specific filtering
-- Top 10 occupation groups and occupations
-- Drill-down into specific occupation groups
-- Vacancy trends over time with daily granularity
-
-**🏢 Employer Analysis:**
-- Total active employers by field
-- Top employers by vacancy count
-- Employer trends and hiring patterns
-- Group-level employer exploration
-
-**🌍 Geographic Analysis:**
-- Interactive maps of Sweden (regions + municipalities)  
-- Vacancy distribution by application deadline urgency
-- Regional hiring demand visualization
-
-**Key Interactive Features:**
-- **Global Filter**: Occupation field selection affects all pages
-- **Drill-down Navigation**: From fields → groups → specific occupations
-- **Time Series**: Daily vacancy trends with hover details
-- **Interactive Maps**: Click regions for detailed statistics
-
-## 🏗️ Why This Architecture?
-
-### ✅ **Scalability**
-- **Containerized Services**: Easy horizontal scaling
-- **Azure Web Apps**: Auto-scaling based on demand
-- **DuckDB**: Columnar database optimized for analytics
-
-### ✅ **Maintainability**  
-- **Infrastructure as Code**: Reproducible deployments
-- **Workspace Dependencies**: Isolated, manageable dependencies
-- **Multi-stage Docker**: Optimized, cacheable builds
-
-### ✅ **Cost Efficiency**
-- **Serverless Components**: Pay only for usage
-- **Shared Storage**: Single file share for all services
-- **Container Instances**: No VM overhead
-
-### ✅ **Developer Experience**
-- **Local Development**: docker-compose for rapid iteration
-- **Automated Deployment**: One-command full deployment
-- **Hot Reloading**: Streamlit auto-refreshes on code changes
+</details>
 
 ---
 
-**🎯 Ready to deploy?** Run `deploy_all.sh` and your Swedish job market analytics platform will be live in minutes!
+**🎯 Ready to get started?** Run `./deploy_all.sh` and you'll have a live Swedish job market analytics platform in ~15 minutes!
+
+**Questions or Issues?** Check the troubleshooting section above or review the technical documentation in the expandable sections.
