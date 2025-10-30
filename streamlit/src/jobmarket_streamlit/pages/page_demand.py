@@ -117,7 +117,7 @@ fig_top_groups.update_layout(
     },
     margin=dict(l=20, r=20, t=40, b=20),  # Adjust margins
 )
-st.plotly_chart(fig_top_groups, width="stretch")
+st.plotly_chart(fig_top_groups, use_container_width=True)
 
 # Create section header with title for occupations
 st.markdown('<div class="section-header"><h3>Top 10 Occupations:</h3></div>', unsafe_allow_html=True)
@@ -144,7 +144,7 @@ fig_top_occupations.update_layout(
     },
     margin=dict(l=20, r=20, t=40, b=20),  # Adjust margins
 )
-st.plotly_chart(fig_top_occupations, width="stretch")
+st.plotly_chart(fig_top_occupations, use_container_width=True)
 
 # ==================================
 # GROUP SECTION
