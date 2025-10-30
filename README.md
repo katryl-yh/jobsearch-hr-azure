@@ -49,10 +49,16 @@ Once deployment completes, you'll have access to:
   - Multi-page dashboard with demand, employer, and geographic analysis
   - Real-time filtering and drill-down capabilities
 
+Analytics Dashboard:
+![Analytics Dashboard](assets/dashboard.png)
+
 - **🔄 Pipeline Management**: `http://<your-container-fqdn>:3000`
   - Dagster UI for monitoring data extraction and transformation
   - Scheduled jobs running daily at 8 AM
   - Asset lineage and job execution history
+
+Pipeline Management in Dagster:
+![Pipeline Management](assets/dagster_overview.png)
 
 ### First Steps After Deployment
 1. **Access the Dashboard**: Open the provided dashboard URL
